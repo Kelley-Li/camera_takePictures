@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<style>
+			body{
+				background-color: #011d2e;
+			}
+			ul,li,body{
+				margin:0;
+				padding:0;
+			}
+			li{
+				list-style: none;
+			}
+			#box{
+				width:800px;
+				height:480px;
+				margin:40px auto;
+				position: relative;
+			}
+			#mask {
+				width:800px;
+				height:480px;
+				background-color: white;
+				position: absolute;
+				z-index: 99;
+				opacity:0;
+			}
+			img{
+				width:800px;
+				height:480px;
+				-webkit-filter: blur(5px);
+			}
+			#div2{
+				width:200px;
+				height:120px;
+				position: absolute;
+				top:0px;
+				left:0px;
+			    background-image:url(img/1.jpg);
+			    background-size: 800px 480px;
+			    /*opacity: 1;*/
+			}
+			#div2 div{
+				width:200px;
+				height:120px;
+				background-image: url(img/2.png);
+				background-size: 200px 120px;
+			}
+			#menu {
+				width: 60px;
+				height: 30px;
+				border: 1px solid #000;
+				font: 14px/30px "微软雅黑";
+				color: white;
+				display: none;
+				position: absolute;
+				text-align: center;
+			}
+			#menu:hover{
+				color: yellow;
+			}
+			#list{
+				width:210px;
+				height: 420px;
+				overflow: hidden;
+				position: absolute;
+				left:20px;
+				top: 40px;
+			}
+			.list1{
+				position: absolute;
+				left: 0;
+				top:420px;
+				width:200px;
+				height:120px;
+				border:3px solid white;
+				background-image: url(img/1.jpg);
+				background-size: 800px 480px;
+				transition:0.4s;
+			}
+			.span{
+				width:20px;
+				position: absolute;
+				left: 0;
+				top: 0;
+				background-color: white;
+				text-align: center;
+				font:14px/20px "微软雅黑";
+				font-weight: bold;
+			}
+		</style>
+		<script>
+			window.onload=function(){
+				
+				var	menu=document.getElementById("menu")
+				
+				var box = document.getElementById("box");
+				var mask = document.getElementById("mask");
+				var div2 =document.getElementById("div2");
+				var list = document.getElementById("list");
+				
+				//左侧每张图
+				var divs=list.getElementsByTagName("div");
+				var spans = list.getElementsByTagName("span");
+				var diw = (document.documentElement.clientWidth-box.offsetWidth)/2;
+				
+				//大图的宽高
+				var boxW=box.offsetWidth;
+				var boxH=box.offsetHeight;
+				
+				//左侧小图的宽高
+				var w=div2.offsetWidth;
+				var h=div2.offsetHeight;
+				
+				//禁止选中(onselectstart 或者 onmousedown)
+				/*document.body.onselectstart = function() {
+					return false;
+				}*/
+				document.body.onmousedown = function() {
+					return false;
+				}
+				
+				//相机移动事件
+				box.onmousemove=function(e){
+					var x=e.clientX;
+					var y=e.clientY;
+					
+					var l=div2.offsetLeft;
+					var t=div2.offsetTop;
+					
+					//镜头框定位左 上变量
+					var L=x-diw-w/2;
+					var T=y-h/2-box.offsetTop;
+					
+					//限制镜头框上下左右
+					if(L<=0){
+						L=0;
+					}
+					if(L>=boxW-w){
+						L=boxW-w
+					}
+					if(T<=0){
+						T=0
+					}
+					if(T>boxH-h){
+						T=boxH-h
+					}
+					div2.style.left=L+'px';
+					div2.style.top=T+'px';
+					div2.style.backgroundPosition=(-L)+"px"+" "+(-T)+"px";
+				}
+				
+				var num=0;
+				//点击生成照片
+				box.onclick=function(e){
+					num++;
+					
+					//闪光
+					miaovMove(mask,{"opacity":1},100,"linear",function(){
+						mask.style.opacity=0;
+					})
+					
+					//镜头框Left  Top
+					var L=-div2.offsetLeft;
+					var T=-div2.offsetTop;
+					
+					//点击之后创建一个照片和序号
+					var div=document.createElement("div");
+						div.className="list1";
+						div.style.backgroundPosition=L+"px"+" "+T+"px";
+					
+					var span=document.createElement("span");
+						span.className='span';
+						span.innerHTML=num;
+					
+					div.appendChild(span);
+					list.appendChild(div);
+					
+					
+					//重新设置每个照片的定位top
+					var n=-140;
+					for(var i=divs.length-1;i>=0;i--){
+						divs[i].style.top=list.offsetHeight+n+"px"
+						n=n-140;
+					}
+					
+					//右击
+					var m=0;
+					
+					for(var i=0;i<divs.length;i++){
+						divs[i].index=i;
+						
+						divs[i].oncontextmenu=function(e){
+							menu.style.display="block";
+							
+							menu.style.top=e.clientY-5+"px";
+							menu.style.left=e.clientX+5+"px";
+							
+							m=this.index;
+							
+							e.preventDefault();
+                			return false;
+						}
+					}
+					
+					//点击删除时
+					menu.onclick=function(){
+						list.removeChild(divs[m]);
+						
+						//重新赋值index
+						for(var i=0;i<divs.length;i++){
+							divs[i].index=i;
+						}
+						
+						//改变top值
+						for(var i=m-1;i>=0;i--){
+							divs[i].style.top=divs[i].offsetTop+140+"px"
+						}
+						//改变序号
+						for(var j=m;j<spans.length;j++){
+							spans[j].innerHTML=parseInt(spans[j].innerHTML)-1;
+						}
+						
+						num--;
+					}
+					
+					document.onclick=function(){
+						menu.style.display="none";
+					}
+					e.preventDefault();
+                	return false;
+				}
+				
+				//左侧照片滚动时
+				list.onmousewheel=function(e){
+					if(divs.length>3){
+						doWheel(e);
+					}
+				}
+				
+				
+			var onoff1=false;//默认照片box不滚动
+			
+			function doWheel(e) {
+               var flag = true;
+               
+               //滚动完一次后才能执行下一次滚动
+               if(onoff1){
+               		return
+               }
+               onoff1=true;//照片box滚动时为true
+               
+              
+               //滚轮做兼容
+                if (e.wheelDelta) {
+                    flag = e.wheelDelta > 0 ? true : false;
+                } else {
+                    flag = e.detail < 0 ? true : false;
+                }
+                
+                //滚动时控制top值，并限制范围
+                var T=0;
+                if(divs[0].offsetTop<0 && flag==true){
+                	T=140
+                }else if(divs[divs.length-1].offsetTop>list.offsetHeight-divs[divs.length-1].offsetHeight && flag==false){
+                	T=-140
+                }
+                for(var i=0;i<divs.length;i++){
+					divs[i].style.top=T+divs[i].offsetTop+"px";
+				}
+                
+                //当滚动完成之后关闭开关（最好不用延迟器，会有问题）
+                //用ontransitionend，写在函数外面
+                
+                setTimeout(function(){
+					onoff1=false;
+				},400)
+                
+                e.preventDefault();
+                return false;
+            }
+			
+			
+			
+			
+			
+		function miaovMove(obj,attrs,duration,fx,endFn){
+			var j = {};
+			for(var att in attrs ){
+				j[att] = {};
+				j[att].b =  parseFloat(getComputedStyle(obj)[att]);
+				j[att].c = attrs[att] - j[att].b;//运行总路程
+			}
+			var d = duration;//持续时间
+			var past = new Date();
+			obj.timer = setInterval(function(){
+				var now = new Date();
+				var t = now - past;//已过时间
+				if(t > d){
+					t = d;
+				}
+				for(var att in j){
+					var b = j[att].b;
+					var c = j[att].c;
+					var v = Tween[fx](t, b, c, d);
+					if( att == "opacity" ){
+						obj.style[att] = v;
+					}else{
+						obj.style[att] = v + "px";
+					}
+				}
+				if(t==d){
+					clearInterval(obj.timer);
+					endFn && endFn();
+				}
+			},20)
+		}
+		var Tween = {
+		    linear: function (t, b, c, d){  //匀速
+		        return c*t/d + b;
+		    },
+		    easeIn: function(t, b, c, d){  //加速曲线
+		        return c*(t/=d)*t + b;
+		    },
+		    easeOut: function(t, b, c, d){  //减速曲线
+		        return -c *(t/=d)*(t-2) + b;
+		    },
+		    easeBoth: function(t, b, c, d){  //加速减速曲线
+		        if ((t/=d/2) < 1) {
+		            return c/2*t*t + b;
+		        }
+		        return -c/2 * ((--t)*(t-2) - 1) + b;
+		    },
+		    easeInStrong: function(t, b, c, d){  //加加速曲线
+		        return c*(t/=d)*t*t*t + b;
+		    },
+		    easeOutStrong: function(t, b, c, d){  //减减速曲线
+		        return -c * ((t=t/d-1)*t*t*t - 1) + b;
+		    },
+		    easeBothStrong: function(t, b, c, d){  //加加速减减速曲线
+		        if ((t/=d/2) < 1) {
+		            return c/2*t*t*t*t + b;
+		        }
+		        return -c/2 * ((t-=2)*t*t*t - 2) + b;
+		    },
+		    elasticIn: function(t, b, c, d, a, p){  //正弦衰减曲线（弹动渐入）
+		        if (t === 0) {
+		            return b;
+		        }
+		        if ( (t /= d) == 1 ) {
+		            return b+c;
+		        }
+		        if (!p) {
+		            p=d*0.3;
+		        }
+		        if (!a || a < Math.abs(c)) {
+		            a = c;
+		            var s = p/4;
+		        } else {
+		            var s = p/(2*Math.PI) * Math.asin (c/a);
+		        }
+		        return -(a*Math.pow(2,10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )) + b;
+		    },
+		    elasticOut: function(t, b, c, d, a, p){    //正弦增强曲线（弹动渐出）
+		        if (t === 0) {
+		            return b;
+		        }
+			}
+		}
+			}
+		</script>
+	</head>
+	<body >
+		<div id="list"></div>
+		<div id="box">
+			<div id="mask"></div>
+		    <img src="img/1.jpg" />
+		    <div id="div2">
+		     	<div></div>
+		    </div>
+		</div>
+		<div id="menu">删除图片</div>
+	</body>
+</html>
